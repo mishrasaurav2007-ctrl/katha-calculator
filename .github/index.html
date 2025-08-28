@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>भूमि कैलकुलेटर</title>
+<style>
+/* Basic body */
+body{margin:0;font-family:'Segoe UI',sans-serif;background:#f0f4f8;color:#333;transition:0.3s;}
+header{padding:20px;text-align:center;background:#4f46e5;color:white;transition:0.3s;}
+h1{margin:0;font-size:1.8rem;}
+.sub{font-size:0.9rem;color:#ddd;margin-top:5px;}
+.container{max-width:500px;margin:20px auto;padding:0 15px;}
+
+/* Card styles */
+.card{background:white;padding:20px;margin-bottom:15px;border-radius:12px;box-shadow:0 4px 12px rgba(0,0,0,0.15);transition:0.3s;}
+.input-row{display:flex;justify-content:space-between;align-items:center;margin:10px 0;}
+input[type=number]{width:48%;padding:8px;border-radius:6px;border:1px solid #ccc;transition:0.3s;}
+select{padding:8px;border-radius:6px;border:1px solid #ccc;transition:0.3s;}
+
+/* Buttons */
+button.primary{padding:12px;width:100%;border:none;border-radius:8px;background:#4f46e5;color:white;font-weight:bold;margin-top:10px;cursor:pointer;transition:0.3s;}
+button.ghost{padding:6px 12px;margin-top:10px;border:none;background:#f0f0f0;border-radius:6px;cursor:pointer;color:#333;transition:0.3s;}
+.mode-grid{display:flex;gap:10px;margin-top:10px;}
+.mode-btn{flex:1;padding:12px;border:none;border-radius:8px;background:#e0e7ff;color:#4f46e5;font-weight:bold;cursor:pointer;transition:0.3s;}
+.mode-btn[aria-pressed="true"]{background:#4f46e5;color:white;}
+
+/* Result and pills */
+.result{margin-top:10px;padding:12px;background:#f0f4ff;border-radius:8px;transition:0.3s;}
+.pill-row{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px;}
+.pill{background:#e0e7ff;padding:6px 12px;border-radius:20px;transition:0.3s;}
+.showhow{margin-top:8px;background:#eef2ff;padding:8px;border-radius:6px;font-size:0.9rem;display:none;transition:0.3s;}
+
+/* Spinner */
+.spinner{border:4px solid #f3f3f3;border-top:4px solid #4f46e5;border-radius:50%;width:28px;height:28px;animation:spin 1s linear infinite;margin:auto;display:none;}
+@keyframes spin{0%{transform:rotate(0deg);}100%{transform:rotate(360deg);}}
+
+/* Big number display */
+.big-num{font-size:1.5rem;font-weight:bold;text-align:center;margin-top:5px;}
+
+/* Dark Mode */
+body.dark{background:#1e1e2f;color:#eee;}
+body.dark header{background:#111133;color:#fff;}
+body.dark .card{background:#2a2a3c;box-shadow:0 4px 12px rgba(0,0,0,0.5);}
+body.dark input, body.dark select{background:#3a3a50;color:#fff;border:1px solid #555;}
+body.dark .pill{background:#5555aa;color:#fff;}
+body.dark .result{background:#333366;}
+body.dark button.primary{background:#5555aa;}
+body.dark button.ghost{background:#444466;color:#fff;}
+</style>
+</head>
+<body>
+
+<header>
+  <h1>भूमि कैलकुलेटर</h1>
+  <p class="sub">Decimal ↔ Katha / Bigha / Dhur / Kanva</p>
+  <!-- Dark/Light Mode Toggle -->
+  <div style="text-align:center;margin-top:10px;">
+    <button id="modeToggle" class="ghost">🌙 Dark Mode</button>
+  </div>
+</header>
+
+<main class="container">
+
+<!-- Mode Selection -->
+<section class="card">
+<h2>मोड चुनें</h2>
+<div class="mode-grid">
+<button class="mode-btn" data-mode="d2k" aria-pressed="true">Decimal → Katha</button>
+<button class="mode-btn" data-mode="k2d" aria-pressed="false">Katha → Decimal</button>
+</div>
+</section>
+
+<!-- Mauja Selection -->
+<section class="card">
+<h2>मौजा चुनें</h2>
+<div class="input-row">
+<label for="mauja">Mauja</label>
+<select id="mauja">
+<option value="धर्मडीहा" selected>धर्मडीहा</option>
+<option value="लकसेना">लकसेना</option>
+</select>
+</div>
+<div class="note" id="ruleNote">धर्मडीहा मौजा चुना गया</div>
+<div class="spinner" id="spinnerMauja"></div>
+</section>
+<!-- Decimal → Katha Section -->
+<section class="card" id="panelD2K">
+  <h2>Decimal → Bigha / Katha / Dhur / Kanva</h2>
+  <div class="input-row"><label>Acre</label><input id="acreIn" type="number" step="0.01" placeholder="Acre"></div>
+  <div class="input-row"><label>Decimal</label><input id="decIn" type="number" step="0.0001" placeholder="Decimal"></div>
+  <div class="input-row"><label>Hectare</label><input id="hectareIn" type="number" step="0.01" placeholder="Hectare"></div>
+  <button class="primary" id="btnD2K">कैल्क्युलेट करें</button>
+  <div class="spinner" id="spinnerD2K"></div>
+  <div class="result" id="resD2K">
+    <h3>परिणाम</h3>
+    <div class="pill-row" id="breakdownD2K"></div>
+    <button class="ghost" id="showHowD2K">कैसे हुआ?</button>
+    <div class="showhow" id="showHowContentD2K"></div>
+  </div>
+</section>
+
+<!-- Katha → Decimal Section -->
+<section class="card" id="panelK2D" hidden>
+  <h2>Bigha / Katha / Dhur / Kanva → Decimal</h2>
+  <div class="input-row"><label>Bigha</label><input id="bighaIn" type="number" placeholder="Bigha"></div>
+  <div class="input-row"><label>Katha</label><input id="kathaIn" type="number" placeholder="Katha"></div>
+  <div class="input-row"><label>Dhur</label><input id="dhurIn" type="number" placeholder="Dhur"></div>
+  <div class="input-row"><label>Kanva</label><input id="kanvaIn" type="number" placeholder="Kanva"></div>
+  <button class="primary" id="btnK2D">कैल्क्युलेट करें</button>
+  <div class="spinner" id="spinnerK2D"></div>
+  <div class="result" id="resK2D">
+    <h3>परिणाम</h3>
+    <div class="big-num" id="decOut">0</div>
+    <button class="ghost" id="showHowK2D">कैसे हुआ?</button>
+    <div class="showhow" id="showHowContentK2D"></div>
+  </div>
+</section>
+</main>
+<script>
+// Mauja rules
+const RULES = {
+  "धर्मडीहा": {decPerDhur: 0.291},
+  "लकसेना": {decPerDhur: 0.218}
+};
+
+// Derive calculation factors
+function derive(rule){
+  const d = rule.decPerDhur;
+  return {
+    decPerDhur: d,
+    decPerKatha: d*20,
+    decPerBigha: d*400,
+    decPerKanva: d/20
+  };
+}
+
+// Elements
+const modeButtons = document.querySelectorAll(".mode-btn");
+const panelD2K = document.getElementById("panelD2K");
+const panelK2D = document.getElementById("panelK2D");
+const maujaSel = document.getElementById("mauja");
+const ruleNote = document.getElementById("ruleNote");
+const spinnerMauja = document.getElementById("spinnerMauja");
+
+const acreIn = document.getElementById("acreIn"), decIn = document.getElementById("decIn"), hectareIn = document.getElementById("hectareIn");
+const btnD2K = document.getElementById("btnD2K"), resD2K = document.getElementById("resD2K"), breakdownD2K = document.getElementById("breakdownD2K");
+const showHowBtnD2K = document.getElementById("showHowD2K"), showHowContentD2K = document.getElementById("showHowContentD2K"), spinnerD2K = document.getElementById("spinnerD2K");
+
+const bighaIn = document.getElementById("bighaIn"), kathaIn = document.getElementById("kathaIn"), dhurIn = document.getElementById("dhurIn"), kanvaIn = document.getElementById("kanvaIn");
+const btnK2D = document.getElementById("btnK2D"), resK2D = document.getElementById("resK2D"), decOut = document.getElementById("decOut");
+const showHowBtnK2D = document.getElementById("showHowK2D"), showHowContentK2D = document.getElementById("showHowContentK2D"), spinnerK2D = document.getElementById("spinnerK2D");
+
+const modeToggle = document.getElementById("modeToggle");
+
+let mode = "d2k";
+let activeRule = derive(RULES[maujaSel.value]);
+
+// Update Mauja
+function updateRule(){
+  activeRule = derive(RULES[maujaSel.value]);
+  ruleNote.textContent = `${maujaSel.value} मौजा चुना गया`;
+}
+
+// Set Mode
+function setMode(next){
+  mode = next;
+  modeButtons.forEach(btn => btn.setAttribute("aria-pressed", btn.dataset.mode===mode));
+  panelD2K.hidden = mode !== "d2k";
+  panelK2D.hidden = mode !== "k2d";
+  resD2K.hidden = resK2D.hidden = true;
+  breakdownD2K.innerHTML = "";
+  decOut.textContent = "0";
+  showHowContentD2K.style.display = showHowContentK2D.style.display = "none";
+  acreIn.value = decIn.value = hectareIn.value = "";
+  bighaIn.value = kathaIn.value = dhurIn.value = kanvaIn.value = "";
+}
+
+// Mode Buttons
+modeButtons.forEach(btn => btn.addEventListener("click", ()=>{ setMode(btn.dataset.mode); }));
+
+// Mauja select
+maujaSel.addEventListener("change", ()=>{
+  spinnerMauja.style.display = "block";
+  setTimeout(()=>{
+    spinnerMauja.style.display = "none";
+    updateRule();
+  },500);
+});
+
+// Utils
+function parseNum(v){const n = Number(v); return Number.isFinite(n)?n:0;}
+function roundTo(n,p=2){const f=Math.pow(10,p); return Math.round((n+Number.EPSILON)*f)/f;}
+
+// Decimal → Katha Calculation
+btnD2K.addEventListener("click", ()=>{
+  spinnerD2K.style.display="block";
+  setTimeout(()=>{
+    spinnerD2K.style.display="none";
+
+    // Total decimal considering Acre, Decimal, Hectare
+    let total = parseNum(decIn.value) + parseNum(acreIn.value)*100 + parseNum(hectareIn.value)*247.105;
+
+    const {decPerBigha, decPerKatha, decPerDhur, decPerKanva} = activeRule;
+
+    const bigha = Math.floor(total/decPerBigha);
+    total -= bigha*decPerBigha;
+
+    const katha = Math.floor(total/decPerKatha);
+    total -= katha*decPerKatha;
+
+    const dhur = Math.floor(total/decPerDhur);
+    total -= dhur*decPerDhur;
+
+    const kanva = Math.round(total/decPerKanva);
+
+    breakdownD2K.innerHTML = `<span class="pill">${bigha} Bigha</span><span class="pill">${katha} Katha</span><span class="pill">${dhur} Dhur</span><span class="pill">${kanva} Kanva</span>`;
+    resD2K.hidden = false;
+
+    showHowContentD2K.innerHTML = 
+      `Bigha=${bigha}×${roundTo(decPerBigha)}=${roundTo(bigha*decPerBigha)}<br>
+       Katha=${katha}×${roundTo(decPerKatha)}=${roundTo(katha*decPerKatha)}<br>
+       Dhur=${dhur}×${roundTo(decPerDhur)}=${roundTo(dhur*decPerDhur)}<br>
+       Kanva=${kanva}×${roundTo(decPerKanva)}=${roundTo(kanva*decPerKanva)}`;
+  },500);
+});
+
+showHowBtnD2K.addEventListener("click", ()=>{ 
+  showHowContentD2K.style.display = showHowContentD2K.style.display==="none"?"block":"none";
+});
+
+// Katha → Decimal Calculation
+btnK2D.addEventListener("click", ()=>{
+  spinnerK2D.style.display="block";
+  setTimeout(()=>{
+    spinnerK2D.style.display="none";
+
+    let b = parseNum(bighaIn.value);
+    let k = parseNum(kathaIn.value);
+    let d = parseNum(dhurIn.value);
+    let kn = parseNum(kanvaIn.value);
+
+    // Normalize values
+    if(kn>=20){d+=Math.floor(kn/20); kn=kn%20;}
+    if(d>=20){k+=Math.floor(d/20); d=d%20;}
+    if(k>=20){b+=Math.floor(k/20); k=k%20;}
+
+    const {decPerBigha, decPerKatha, decPerDhur, decPerKanva} = activeRule;
+
+    let totalDec = b*decPerBigha + k*decPerKatha + d*decPerDhur + kn*decPerKanva;
+    decOut.textContent = roundTo(totalDec,4);
+    resK2D.hidden = false;
+
+    showHowContentK2D.innerHTML = 
+      `Bigha: ${b}×${roundTo(decPerBigha)}=${roundTo(b*decPerBigha)}<br>
+       Katha: ${k}×${roundTo(decPerKatha)}=${roundTo(k*decPerKatha)}<br>
+       Dhur: ${d}×${roundTo(decPerDhur)}=${roundTo(d*decPerDhur)}<br>
+       Kanva: ${kn}×${roundTo(decPerKanva)}=${roundTo(kn*decPerKanva)}<br>
+       Total Decimal=${roundTo(totalDec,4)}`;
+  },500);
+});
+
+showHowBtnK2D.addEventListener("click", ()=>{ 
+  showHowContentK2D.style.display = showHowContentK2D.style.display==="none"?"block":"none";
+});
+
+// Dark/Light Mode Toggle
+modeToggle.addEventListener("click", ()=>{
+  document.body.classList.toggle("dark");
+  if(document.body.classList.contains("dark")){
+    modeToggle.textContent="☀️ Light Mode";
+  } else {
+    modeToggle.textContent="🌙 Dark Mode";
+  }
+});
+</script>
+</body>
+</html>
